@@ -7,6 +7,7 @@ The PDF Merger App is a GUI tool for merging multiple PDF files into a single PD
 - Rearrange and remove PDFs before merging.
 - Set a custom output filename for the merged PDF.
 - Merges PDFs into a single output file saved in your Downloads folder by default.
+- Re-order pages
 
 ## Prerequisites
 - Python 3.6 or higher
