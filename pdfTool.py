@@ -1,7 +1,7 @@
 import PyPDF2
 import os
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 
 class PDFMergerApp:
     def __init__(self, root):
@@ -26,6 +26,9 @@ class PDFMergerApp:
         self.remove_button = tk.Button(root, text="Remove Selected", command=self.remove_pdf)
         self.remove_button.pack(pady=5)
 
+        self.reorder_pages_button = tk.Button(root, text="Reorder Pages", command=self.reorder_pages)
+        self.reorder_pages_button.pack(pady=5)
+
         self.merge_button = tk.Button(root, text="Merge PDFs", command=self.merge_pdfs)
         self.merge_button.pack(pady=20)
 
@@ -48,6 +51,45 @@ class PDFMergerApp:
         for index in reversed(selected_indices):
             self.listbox.delete(index)
             del self.pdf_files[index]
+
+    def reorder_pages(self):
+        selected_index = self.listbox.curselection()
+        if not selected_index:
+            messagebox.showwarning("Warning", "No PDF file selected to reorder pages!")
+            return
+        
+        pdf_file = self.pdf_files[selected_index[0]]
+        
+        # Extract pages from the selected PDF
+        try:
+            with open(pdf_file, "rb") as file:
+                reader = PyPDF2.PdfReader(file)
+                num_pages = len(reader.pages)
+
+                # Ask user for the new page order
+                page_order = simpledialog.askstring("Reorder Pages", f"Enter new page order (1-{num_pages}), comma-separated:")
+                if page_order:
+                    page_order = [int(x) - 1 for x in page_order.split(",") if x.isdigit() and 0 <= int(x) - 1 < num_pages]
+
+                    # Create a new PDF file with pages in the new order
+                    writer = PyPDF2.PdfWriter()
+                    for page_num in page_order:
+                        writer.add_page(reader.pages[page_num])
+
+                    # Save the reordered PDF to a temporary file
+                    temp_filename = os.path.join(self.downloads_folder, f"reordered_{os.path.basename(pdf_file)}")
+                    with open(temp_filename, "wb") as output_file:
+                        writer.write(output_file)
+
+                    # Update the list with the new file
+                    self.pdf_files[selected_index[0]] = temp_filename
+                    self.listbox.delete(selected_index[0])
+                    self.listbox.insert(selected_index[0], os.path.basename(temp_filename))
+
+                    messagebox.showinfo("Success", f"Reordered PDF saved as {temp_filename}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An error has occurred while reordering pages: {e}")
 
     def merge_pdfs(self):
         if not self.pdf_files:
